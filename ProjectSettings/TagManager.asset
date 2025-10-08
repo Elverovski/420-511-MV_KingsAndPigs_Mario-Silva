@@ -11,6 +11,9 @@ TagManager:
   - Ground
   - Checkpoint
   - Enemy
+  - Start
+  - Quit
+  - Door
   layers:
   - Default
   - TransparentFX
@@ -18,8 +21,8 @@ TagManager:
   - 
   - Water
   - UI
-  - 
-  - 
+  - Player
+  - Ground
   - 
   - 
   - 

@@ -1,138 +1,79 @@
 ﻿using UnityEngine;
+using System.Collections;
 
 public class PlayerMove : MonoBehaviour
 {
-    // Clip audio à jouer quand le joueur saute (assigné dans l’Inspector)
-    [SerializeField] AudioClip sfxJump; 
-    // Composant AudioSource qui jouera les sons
-    private AudioSource audioSource;
+    [SerializeField] private AudioClip sfxJump;
+    [SerializeField] private GameObject attackHitbox;
+    [SerializeField] private float moveSpeed = 4f;
+    [SerializeField] private float jumpForce = 300f;
 
-    // Valeur d’entrée horizontale (−1 = gauche, 0 = immobile, 1 = droite)
     private float x;
-    // Composant pour gérer l’affichage du sprite (retourner à gauche/droite)
-    private SpriteRenderer spriteRenderer;
-    // Composant pour gérer les animations du joueur
-    private Animator animator;
-    // Composant physique pour gérer les forces (notamment le saut)
     private Rigidbody2D rb;
-
-    // Indique si le joueur doit sauter à la prochaine frame physique
+    private SpriteRenderer spriteRenderer;
+    private Animator animator;
+    private AudioSource audioSource;
     private bool jump = false;
-
     private bool isGrounded = false;
-
-    public Color originalColor = Color.white;
-    public Color damageColor = Color.red;
-
 
     void Awake()
     {
-        // Récupère les composants nécessaires attachés au GameObject
+        rb = GetComponent<Rigidbody2D>();
         spriteRenderer = GetComponent<SpriteRenderer>();
         animator = GetComponent<Animator>();
-        rb = GetComponent<Rigidbody2D>();
         audioSource = GetComponent<AudioSource>();
     }
 
-    void Start()
-    {
-     
-    }
-
-    // Update est appelé une fois par frame (logique liée aux entrées joueur)
     void Update()
     {
-        // ---- Déplacement horizontal ----
         x = Input.GetAxis("Horizontal");
-        animator.SetFloat("x", Mathf.Abs(x)); 
-        transform.Translate(Vector2.right * 4f * Time.deltaTime * x);
+        animator.SetFloat("x", Mathf.Abs(x));
 
-        // ---- Orientation du sprite ----
-        if (x > 0f) { spriteRenderer.flipX = false; } 
-        if (x < 0f) { spriteRenderer.flipX = true; }
+        if (x > 0f) spriteRenderer.flipX = false;
+        if (x < 0f) spriteRenderer.flipX = true;
 
         if (Input.GetKeyDown(KeyCode.UpArrow) && isGrounded)
         {
-            jump = true; // signal qu’il faut sauter dans FixedUpdate
+            jump = true;
             audioSource.PlayOneShot(sfxJump);
-
         }
 
-        // ---- Animation d’attaque ----
-        if (Input.GetKey(KeyCode.Space))
-        {
-            animator.SetBool("Attack", true); 
-        }
-        else
-        {
-            animator.SetBool("Attack", false); 
-        }
-
-        // ---- Animation de courrir ----
-        if (x != 0)
-        {
-            animator.SetBool("isRunning", true);
-        }
-        else
-        {
-            animator.SetBool("isRunning", false);
-        }
+        animator.SetBool("Attack", Input.GetKey(KeyCode.Space));
+        animator.SetBool("isRunning", x != 0);
     }
-
 
     private void FixedUpdate()
     {
-        transform.Translate(Vector2.right * 2f * Time.deltaTime * x);
+        rb.linearVelocity = new Vector2(x * moveSpeed, rb.linearVelocity.y);
 
-        // ---- Saut ----
-        if (jump) 
+        if (jump)
         {
-            jump = false; 
-            rb.AddForce(Vector2.up * 300f); 
+            jump = false;
+            rb.AddForce(Vector2.up * jumpForce);
         }
-
-
     }
 
     private void OnCollisionEnter2D(Collision2D collision)
     {
         if (collision.gameObject.CompareTag("Ground"))
-        {
             isGrounded = true;
-        }
-        if (spriteRenderer != null && collision.gameObject.CompareTag("Enemy"))
-        {
-            spriteRenderer.color = damageColor;
-        }
     }
 
     private void OnCollisionExit2D(Collision2D collision)
     {
         if (collision.gameObject.CompareTag("Ground"))
-        {
             isGrounded = false;
-        }
-
-        if (spriteRenderer != null && collision.gameObject.CompareTag("Enemy"))
-        {
-            spriteRenderer.color = originalColor;
-        }
-
     }
 
-    void OnTriggerEnter2D(Collider2D other)
+    public void ActivateHitbox()
     {
-        if (other.CompareTag("Trap"))
-        {
-            spriteRenderer.color = damageColor;
-        }
+        attackHitbox.SetActive(true);
+        StartCoroutine(DisableHitboxAfterDelay(0.1f));
     }
 
-    private void OnTriggerExit2D(Collider2D other)
+    private IEnumerator DisableHitboxAfterDelay(float delay)
     {
-        if (other.CompareTag("Trap"))
-        {
-            spriteRenderer.color = originalColor;
-        }
+        yield return new WaitForSeconds(delay);
+        attackHitbox.SetActive(false);
     }
 }

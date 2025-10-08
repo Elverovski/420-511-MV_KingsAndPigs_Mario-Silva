@@ -38,6 +38,8 @@ public class EnemyDamageOnContact : MonoBehaviour
         if (Time.time - lastHitTime < hitCooldown) return;
 
         hp.TakeDamage(damage);
+
+
     
         lastHitTime = Time.time;
     }
